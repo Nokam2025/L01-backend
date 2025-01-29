@@ -21,22 +21,22 @@ jobs:
       - checkout
       - run:
           name: Cloner le frontend
-          command: git clone <URL_DU_REPO_FRONTEND> frontend
+          command: git clone https://github.com/Nokam2025/L01-frontend 
       - run:
           name: Installer les dépendances du frontend
           command: |
-            cd frontend
+            cd L01-frontend
             npm install
       - run:
           name: Build du frontend
           command: |
-            cd frontend
+            cd L01-frontend
             npm run build
       - run:
           name: Déplacer le build dans le backend
           command: |
             mkdir -p public
-            cp -r frontend/build/* public/
+            cp -r L01-frontend/build/* public/
       - persist_to_workspace:
           root: .
           paths:
