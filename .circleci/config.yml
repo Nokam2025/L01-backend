@@ -1,38 +1,64 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:node:.,test:jest:
 version: 2.1
+
 orbs:
-  node: circleci/node@5
+  node: circleci/node@5.0.2
+
 jobs:
-  test-node:
-    # Install node dependencies and run tests
+  checkoutEtTests:
     executor: node/default
-    environment:
-      JEST_JUNIT_OUTPUT_DIR: ./test-results/
     steps:
       - checkout
-      - node/install-packages:
-          pkg-manager: npm
       - run:
-          command: npm install jest-junit
+          name: Installer les dépendances
+          command: npm install
       - run:
-          name: Run tests
-          command: npm run test --ci --runInBand --reporters=default --reporters=jest-junit
-      - store_test_results:
-          path: ./test-results/
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
+          name: Exécuter les tests
+          command: npm test
+
+  integrationFrontend:
+    executor: node/default
     steps:
-      # Replace this with steps to deploy to users
+      - checkout
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Cloner le frontend
+          command: git clone <URL_DU_REPO_FRONTEND> frontend
+      - run:
+          name: Installer les dépendances du frontend
+          command: |
+            cd frontend
+            npm install
+      - run:
+          name: Build du frontend
+          command: |
+            cd frontend
+            npm run build
+      - run:
+          name: Déplacer le build dans le backend
+          command: |
+            mkdir -p public
+            cp -r frontend/build/* public/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - public
+
+  deploiement:
+    executor: node/default
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Vérification du répertoire backend après intégration
+          command: ls -R public
+
 workflows:
-  build-and-test:
+  version: 2
+  build-and-deploy:
     jobs:
-      - test-node
-    # - deploy:
-    #     requires:
-    #       - test-node
+      - checkoutEtTests
+      - integrationFrontend:
+          requires:
+            - checkoutEtTests
+      - deploiement:
+          requires:
+            - integrationFrontend
